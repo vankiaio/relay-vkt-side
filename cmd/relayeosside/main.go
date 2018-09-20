@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
-	eosrelay "github.com/kingblockio/eos-relay/app"
+	eosrelay "blockchain-develop/relay-eos-side/app"
 )
 
 // rootCmd is the entry point for this binary
