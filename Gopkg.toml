@@ -28,6 +28,10 @@
   name = "github.com/cosmos/cosmos-sdk"
   source = "https://github.com/kingblockio/cosmos-sdk.git"
   version = "=v0.23.1-dev-v3"
+  
+[[constraint]]
+  name = "github.com/eoscanada/eos-go"
+  source = "https://github.com/eoscanada/eos-go.git"
 
 [[constraint]]
   name = "github.com/bgentry/speakeasy"

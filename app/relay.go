@@ -19,7 +19,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	abci "github.com/tendermint/tendermint/abci/types"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/kingblockio/eos-relay/types"
+	"github.com/blockchain-develop/relay-eos-side/types"
+	eos "github.com/eoscanada/eos-go"
 )
 
 const (
@@ -104,6 +105,13 @@ func (c relayCommander) loop(fromChainID, fromChainNode, toChainID, toChainNode 
 	if err != nil {
 		panic(err)
 	}
+	
+	//
+	eos_api := eos.New("http://127.0.0.1:8888/")
+
+	infoResp, _ := eos_api.GetInfo()
+	accountResp, _ := eos_api.GetAccount("peg")
+	c.logger.Info("log", "string", accountResp.Permissions[0].RequiredAuth.Keys)
 
 	ingressSequenceKey := ibc.IngressSequenceKey(fromChainID)
 	egressSequenceKey := ibc.EgressSequenceKey(toChainID)
