@@ -51,7 +51,7 @@ func MakeCodec() *wire.Codec {
 	wire.RegisterCrypto(cdc)
 	sdk.RegisterWire(cdc)
 	bank.RegisterWire(cdc)
-	ibc.RegisterWire(cdc)
+	//ibc.RegisterWire(cdc)
     auth.RegisterWire(cdc)
 
 	// register custom types
@@ -134,7 +134,7 @@ OUTER:
 		c.logger.Info("log", "string", log)
 
 		//
-		gettable_request := GetTableRowsRequest {
+		gettable_request := eos_api.GetTableRowsRequest {
 			Code: "pegzone",
 			Scope: "pegzone",
 			Table: "actioninfo",
@@ -148,7 +148,7 @@ OUTER:
 
 		//
 		var transfers []eostransfer
-		err_json := json.Unmarshal(gettable_response.Rows, &transfers)
+		err_json := c.cdc.UnmarshalJSON(gettable_response.Rows, &transfers)
 		if err_json != nil {
 			panic("eos get table failed")
 		}
@@ -159,7 +159,7 @@ OUTER:
 		seq := (c.getSequence(toChainNode))
 		//c.logger.Info("broadcast tx seq", "number", seq)
 
-		for i, tran := range tansfers {
+		for i, tran := range transfers {
 			
 			// get the from address
 			from, err := ctx.GetFromAddress()
@@ -174,19 +174,19 @@ OUTER:
 				//Coins: from,
 			}
 			
-			bz, err_json = c.cdc.MarshalBinary(ibc_msg)
+			bz, err_json := c.cdc.MarshalBinary(ibc_msg)
 			if err_json != nil {
 				panic(err)
 			}
 			
 			
 			relay_msg := ibc.IBCRelayMsg {
-            	PayloadType: TRANSFER,
+            	PayloadType: ibc.TRANSFER,
             	Payload: bz,
             	Sequence: i,
             }
 			
-			new_ctx = context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(i)
+			new_ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(i)
 			//ctx = ctx.WithNodeURI(viper.GetString(FlagHubChainNode))
 			//ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc))
 			new_ctx, err = new_ctx.Ensure(ctx.FromAddressName)
