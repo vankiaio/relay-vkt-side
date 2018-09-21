@@ -108,7 +108,7 @@ func (c relayCommander) loop(eosChainNode, toChainID, toChainNode string) {
 	
 	//
 	eos_api := eos.New("http://127.0.0.1:8888/")
-	accountResp, _ := eos_api.GetAccount("peg")
+	accountResp, _ := eos_api.GetAccount("pegzone")
 	c.logger.Info("log", "string", accountResp.Permissions[0].RequiredAuth.Keys)
 
 	ingressSequenceKey := ibc.IngressSequenceKey()
