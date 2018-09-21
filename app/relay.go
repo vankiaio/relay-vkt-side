@@ -186,10 +186,17 @@ OUTER:
 			}
 			
 			
+			// get the from address
+			from, err := ctx.GetFromAddress()
+			if err != nil {
+				panic(err) 
+			}
+			
 			relay_msg := ibc.IBCRelayMsg {
             	PayloadType: ibc.TRANSFER,
             	Payload: bz,
             	Sequence: int64(i),
+            	Relayer: from,
             }
 			
 			new_ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(int64(i))
