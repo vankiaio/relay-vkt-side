@@ -7,6 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	eosrelay "github.com/blockchain-develop/relay-eos-side/app"
 )
 
@@ -29,7 +31,12 @@ func main() {
 	// the below functions and eliminate global vars, like we do
 	// with the cdc.
 
-
+	// add query/post commands (custom to binary)
+	rootCmd.AddCommand(
+		client.GetCommands(
+			authcmd.GetAccountCmd("acc", cdc, types.GetAccountDecoder(cdc)),
+		)...)
+	
 	rootCmd.AddCommand(
 		client.PostCommands(
 			eosrelay.IBCRelayCmd(cdc),
@@ -38,6 +45,7 @@ func main() {
 	// add proxy, version and key info
 	rootCmd.AddCommand(
 		client.LineBreak,
+		keys.Commands(),
 		version.VersionCmd,
 	)
 
