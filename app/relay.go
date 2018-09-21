@@ -144,6 +144,7 @@ OUTER:
 
 		gettable_response, eos_err := eos_api.GetTableRows(gettable_request)
 		if eos_err != nil {
+			c.logger.Info("eos get table failed", "error", eos_err)
 			panic("eos get table failed")
 		}
 
