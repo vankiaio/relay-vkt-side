@@ -20,7 +20,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/blockchain-develop/relay-eos-side/types"
 	eos "github.com/eoscanada/eos-go"
-	"github.com/blockchain-develop/eosside/x/ibc"
+	"github.com/blockchain-develop/relay-eos-side/x/ibc"
 )
 
 const (
@@ -51,7 +51,7 @@ func MakeCodec() *wire.Codec {
 	wire.RegisterCrypto(cdc)
 	sdk.RegisterWire(cdc)
 	bank.RegisterWire(cdc)
-	//ibc.RegisterWire(cdc)
+	ibc.RegisterWire(cdc)
     auth.RegisterWire(cdc)
 
 	// register custom types
