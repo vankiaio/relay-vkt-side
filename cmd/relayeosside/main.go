@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	eosrelay "github.com/blockchain-develop/relay-eos-side/app"
+	"github.com/blockchain-develop/relay-eos-side/types"
 )
 
 // rootCmd is the entry point for this binary
