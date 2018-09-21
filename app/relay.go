@@ -16,7 +16,6 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/ibc"
 	abci "github.com/tendermint/tendermint/abci/types"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/blockchain-develop/relay-eos-side/types"
@@ -149,8 +148,8 @@ OUTER:
 
 		//
 		var transfers []eostransfer
-		err := json.Unmarshal(gettable_response.Rows, &transfers)
-		if err != nil {
+		err_json := json.Unmarshal(gettable_response.Rows, &transfers)
+		if err_json != nil {
 			panic("eos get table failed")
 		}
 		
@@ -160,7 +159,7 @@ OUTER:
 		seq := (c.getSequence(toChainNode))
 		//c.logger.Info("broadcast tx seq", "number", seq)
 
-		for tran,i range tansfers {
+		for i, tran := range tansfers {
 			
 			// get the from address
 			from, err := ctx.GetFromAddress()
@@ -175,8 +174,8 @@ OUTER:
 				//Coins: from,
 			}
 			
-			bz, err = c.cdc.MarshalBinary(ibc_msg)
-			if err != nil {
+			bz, err_json = c.cdc.MarshalBinary(ibc_msg)
+			if err_json != nil {
 				panic(err)
 			}
 			
