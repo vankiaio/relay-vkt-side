@@ -166,7 +166,6 @@ OUTER:
 		}
 		*/
 		
-		c.logger.Info("query chain table", "result", gettable_response)
 		c.logger.Info("query chain table", "total", len(transfers))
 
 		seq := (c.getSequence(toChainNode))
