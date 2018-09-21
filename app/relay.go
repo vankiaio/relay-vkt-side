@@ -159,13 +159,7 @@ OUTER:
 		seq := (c.getSequence(toChainNode))
 		//c.logger.Info("broadcast tx seq", "number", seq)
 
-		for i, tran := range transfers {
-			
-			// get the from address
-			from, err := ctx.GetFromAddress()
-			if err != nil {
-				panic(err) 
-			}
+		for i, _ := range transfers {
 			
 			//
 			ibc_msg := ibc.Transfer{
