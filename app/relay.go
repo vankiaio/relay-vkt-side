@@ -107,7 +107,7 @@ func (c relayCommander) loop(eosChainNode, toChainID, toChainNode string) {
 	}
 	
 	//
-	eos_api := eos.New("http://127.0.0.1:8888/")
+	eos_api := eos.New("http://127.0.0.1:8888")
 	eos_info, _ := eos_api.GetInfo()
 	c.logger.Info("eos info", "ServerVersion", eos_info.ServerVersion)
 	c.logger.Info("eos info", "HeadBlockNum", eos_info.HeadBlockNum)
