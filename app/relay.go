@@ -141,6 +141,11 @@ OUTER:
 			Table: "actioninfo",
 			LowerBound: "1",
 		}
+		
+		//
+			var out []*MyStruct
+	assert.NoError(t, resp.BinaryToStructs(&out))
+	//
 
 		gettable_response, eos_err := eos_api.GetTableRows(gettable_request)
 		if eos_err != nil {
@@ -148,12 +153,23 @@ OUTER:
 			panic("eos get table failed")
 		}
 
+		c.logger.Info("eos get table successful", "result", gettable_response.Rows)
+		
 		//
-		var transfers []eostransfer
+		var transfers []*eostransfer
+		err_json := gettable_response.BinaryToStructs(&transfers)
+		if err_json != nil {
+			c.logger.Info("eos get table failed", "error", err_json)
+			panic("eos get table failed")
+		}
+
+
+		/*
 		err_json := c.cdc.UnmarshalJSON(gettable_response.Rows, &transfers)
 		if err_json != nil {
 			panic("eos get table failed")
 		}
+		*/
 		
 		c.logger.Info("query chain table", "result", gettable_response)
 		c.logger.Info("query chain table", "total", len(transfers))
