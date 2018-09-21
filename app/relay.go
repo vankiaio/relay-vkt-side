@@ -141,11 +141,6 @@ OUTER:
 			Table: "actioninfo",
 			LowerBound: "1",
 		}
-		
-		//
-			var out []*MyStruct
-	assert.NoError(t, resp.BinaryToStructs(&out))
-	//
 
 		gettable_response, eos_err := eos_api.GetTableRows(gettable_request)
 		if eos_err != nil {
