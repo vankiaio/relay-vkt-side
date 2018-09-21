@@ -134,7 +134,7 @@ OUTER:
 		c.logger.Info("log", "string", log)
 
 		//
-		gettable_request := eos_api.GetTableRowsRequest {
+		gettable_request := eos.GetTableRowsRequest {
 			Code: "pegzone",
 			Scope: "pegzone",
 			Table: "actioninfo",
@@ -183,15 +183,15 @@ OUTER:
 			relay_msg := ibc.IBCRelayMsg {
             	PayloadType: ibc.TRANSFER,
             	Payload: bz,
-            	Sequence: i,
+            	Sequence: int64(i),
             }
 			
-			new_ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(i)
+			new_ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(int64(i))
 			//ctx = ctx.WithNodeURI(viper.GetString(FlagHubChainNode))
 			//ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc))
 			new_ctx, err = new_ctx.Ensure(ctx.FromAddressName)
 			new_ctx = new_ctx.WithSequence(seq)
-			xx_res, err = new_ctx.SignAndBuild(ctx.FromAddressName, passphrase, []sdk.Msg{msg}, c.cdc)
+			xx_res, err := new_ctx.SignAndBuild(ctx.FromAddressName, passphrase, []sdk.Msg{relay_msg}, c.cdc)
 			if err != nil {
 				panic(err)
 			}
