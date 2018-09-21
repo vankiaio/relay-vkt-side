@@ -108,13 +108,10 @@ func (c relayCommander) loop(fromChainID, fromChainNode, toChainID, toChainNode 
 	
 	//
 	eos_api := eos.New("http://127.0.0.1:8888/")
-
-	infoResp, _ := eos_api.GetInfo()
 	accountResp, _ := eos_api.GetAccount("peg")
 	c.logger.Info("log", "string", accountResp.Permissions[0].RequiredAuth.Keys)
 
-	ingressSequenceKey := ibc.IngressSequenceKey(fromChainID)
-	egressSequenceKey := ibc.EgressSequenceKey(toChainID)
+	ingressSequenceKey := ibc.IngressSequenceKey()
 
 OUTER:
 	for {
@@ -135,6 +132,8 @@ OUTER:
 		log := fmt.Sprintf("query chain : %s, ingress : %s, number : %d", toChainID, ingressSequenceKey, ingressSequence)
 		c.logger.Info("log", "string", log)
 
+		//
+		
 		egressSequencebz, err := query(fromChainNode, egressSequenceKey, c.ibcStore)
 		if err != nil {
 			c.logger.Error("error querying outgoing packet list length", "err", err)
