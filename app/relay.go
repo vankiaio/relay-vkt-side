@@ -21,12 +21,19 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/blockchain-develop/relay-eos-side/types"
 	eos "github.com/eoscanada/eos-go"
+	"github.com/blockchain-develop/eosside/x/ibc"
 )
 
 const (
-	FlagFromChainID     = "from-chain-id"
-	FlagFromChainNode   = "from-chain-node"
+	FlagEosChainNode   = "eos-url"
 )
+
+type eostransfer struct {
+	id int64
+	from string
+	to string
+	memo string
+}
 
 type relayCommander struct {
 	cdc       *wire.Codec
@@ -73,31 +80,25 @@ func IBCRelayCmd(cdc *wire.Codec) *cobra.Command {
 		Run: cmdr.runIBCRelay,
 	}
 
-	cmd.Flags().String(FlagFromChainID, "", "Chain ID for ibc node to check outgoing packets")
-	cmd.Flags().String(FlagFromChainNode, "tcp://localhost:26657", "<host>:<port> to tendermint rpc interface for this chain")
-
-	cmd.MarkFlagRequired(FlagFromChainID)
-	cmd.MarkFlagRequired(FlagFromChainNode)
-
-	viper.BindPFlag(FlagFromChainID, cmd.Flags().Lookup(FlagFromChainID))
-	viper.BindPFlag(FlagFromChainNode, cmd.Flags().Lookup(FlagFromChainNode))
+	cmd.Flags().String(FlagEosChainNode, "http://localhost:8888", "<host>:<port>")
+	cmd.MarkFlagRequired(FlagEosChainNode)
+	viper.BindPFlag(FlagEosChainNode, cmd.Flags().Lookup(FlagEosChainNode))
 
 	return cmd
 }
 
 // nolint: unparam
 func (c relayCommander) runIBCRelay(cmd *cobra.Command, args []string) {
-	fromChainID := viper.GetString(FlagFromChainID)
-	fromChainNode := viper.GetString(FlagFromChainNode)
+	eosChainNode := viper.GetString(FlagEosChainNode)
 	toChainID := viper.GetString(client.FlagChainID)
 	toChainNode := viper.GetString(client.FlagNode)
 
-	c.loop(fromChainID, fromChainNode, toChainID, toChainNode)
+	c.loop(eosChainNode, toChainID, toChainNode)
 }
 
 // This is nolinted as someone is in the process of refactoring this to remove the goto
 // nolint: gocyclo
-func (c relayCommander) loop(fromChainID, fromChainNode, toChainID, toChainNode string) {
+func (c relayCommander) loop(eosChainNode, toChainID, toChainNode string) {
 
 	ctx := context.NewCoreContextFromViper()
 	// get password
@@ -117,6 +118,7 @@ OUTER:
 	for {
 		time.Sleep(10 * time.Second)
 
+		//
 		ingressSequencebz, err := query(toChainNode, ingressSequenceKey, c.ibcStore)
 		if err != nil {
 			panic(err)
@@ -133,35 +135,32 @@ OUTER:
 		c.logger.Info("log", "string", log)
 
 		//
-		
-		egressSequencebz, err := query(fromChainNode, egressSequenceKey, c.ibcStore)
+		gettable_request := GetTableRowsRequest {
+			Code: "pegzone",
+			Scope: "pegzone",
+			Table: "actioninfo",
+			LowerBound: "1",
+		}
+
+		gettable_response, eos_err := eos_api.GetTableRows(gettable_request)
+		if eos_err != nil {
+			panic("eos get table failed")
+		}
+
+		//
+		var transfers []eostransfer
+		err := json.Unmarshal(gettable_response.Rows, &transfers)
 		if err != nil {
-			c.logger.Error("error querying outgoing packet list length", "err", err)
-			continue OUTER //TODO replace with continue (I think it should just to the correct place where OUTER is now)
-		}
-		var egressSequence int64
-		if egressSequencebz == nil {
-			egressSequence = 0
-		} else if err = c.cdc.UnmarshalBinary(egressSequencebz, &egressSequence); err != nil {
-			panic(err)
+			panic("eos get table failed")
 		}
 		
-		log = fmt.Sprintf("query chain : %s, egress : %s, number : %d", fromChainID, egressSequenceKey, egressSequence)
-		c.logger.Info("log", "string", log)	
-		
-		if egressSequence > ingressSequence {
-			c.logger.Info("Detected IBC packet", "total", egressSequence - ingressSequence)
-		}
+		c.logger.Info("query chain table", "result", gettable_response)
+		c.logger.Info("query chain table", "total", len(transfers))
 
 		seq := (c.getSequence(toChainNode))
 		//c.logger.Info("broadcast tx seq", "number", seq)
 
-		for i := ingressSequence; i < egressSequence; i++ {
-			res, err := queryWithProof(fromChainNode, ibc.EgressKey(toChainID, i), c.ibcStore)
-			if err != nil {
-				c.logger.Error("error querying egress packet", "err", err)
-				continue OUTER // TODO replace to break, will break first loop then send back to the beginning (aka OUTER)
-			}
+		for tran,i range tansfers {
 			
 			// get the from address
 			from, err := ctx.GetFromAddress()
@@ -169,64 +168,24 @@ OUTER:
 				panic(err) 
 			}
 			
-			commit_res, err := commitWithProof(fromChainNode, res.Height + 1, c.ibcStore)
-			commit_update := ibc.CommitUpdate{
-				Header: *commit_res.Header,
-				Commit: *commit_res.Commit,
+			//
+			ibc_msg := ibc.Transfer{
+				//SrcAddr: fromChainID,
+				//DestAddr: toChainID,
+				//Coins: from,
 			}
-			bz, err := c.cdc.MarshalBinary(commit_update)
+			
+			bz, err = c.cdc.MarshalBinary(ibc_msg)
 			if err != nil {
 				panic(err)
 			}
-		
-			commit_msg := ibc.IBCRelayMsg{
-				SrcChain: fromChainID,
-				DestChain: toChainID,
-				Relayer: from,
-				Payload: bz,
-				MsgType: ibc.COMMITUPDATE,
-			}
 			
-			new_ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(i)
-			//ctx = ctx.WithNodeURI(viper.GetString(FlagHubChainNode))
-			//ctx := context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc))
-			new_ctx, err = new_ctx.Ensure(ctx.FromAddressName)
-			new_ctx = new_ctx.WithSequence(seq)
-			xx_res, err := new_ctx.SignAndBuild(ctx.FromAddressName, passphrase, []sdk.Msg{commit_msg}, c.cdc)
-			if err != nil {
-				panic(err)
-			}
-
-			//
-			c.logger.Info("broadcast tx, type : commitupdate, sequence : ", "int", seq)
 			
-			//
-			err = c.broadcastTx(seq, toChainNode, xx_res)
-			seq++
-			if err != nil {
-				c.logger.Error("error broadcasting ingress packet", "err", err)
-				continue OUTER // TODO replace to break, will break first loop then send back to the beginning (aka OUTER)
-			}
-
-            new_ibcpacket := ibc.NewIBCPacket {
-            	Packet: res.Value,
-            	Proof: res.Proof,
+			relay_msg := ibc.IBCRelayMsg {
+            	PayloadType: TRANSFER,
+            	Payload: bz,
             	Sequence: i,
             }
-            
-            bz, err = c.cdc.MarshalBinary(new_ibcpacket)
-			if err != nil {
-				panic(err)
-			}
-			
-			//
-			msg := ibc.IBCRelayMsg{
-				SrcChain: fromChainID,
-				DestChain: toChainID,
-				Relayer: from,
-				Payload: bz,
-				MsgType: ibc.NEWIBCPACKET,
-			}
 			
 			new_ctx = context.NewCoreContextFromViper().WithDecoder(authcmd.GetAccountDecoder(c.cdc)).WithSequence(i)
 			//ctx = ctx.WithNodeURI(viper.GetString(FlagHubChainNode))
